@@ -7,9 +7,30 @@ class Indecision extends React.Component {
     this.whatToDo = this.whatToDo.bind(this);
     this.handleRemoveAll = this.handleRemoveAll.bind(this);
     this.handleAddOption = this.handleAddOption.bind(this);
+    this.handleDeleteOption = this.handleDeleteOption.bind(this);
     this.state = {
       options: []
     };
+  }
+
+  componentDidMount() {
+    try {
+      const json = JSON.parse(localStorage.getItem("options"));
+      if (json) {
+        this.setState(() => {
+          return {
+            options: json
+          };
+        });
+      }
+    } catch (e) {}
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.options.length !== this.state.options.length) {
+      const json = JSON.stringify(this.state.options);
+      localStorage.setItem("options", json);
+    }
   }
 
   whatToDo() {
@@ -19,11 +40,7 @@ class Indecision extends React.Component {
   }
 
   handleRemoveAll() {
-    this.setState(() => {
-      return {
-        options: []
-      };
-    });
+    this.setState(() => ({ options: [] }));
   }
 
   handleAddOption(option) {
@@ -37,6 +54,12 @@ class Indecision extends React.Component {
         options: [...prevState.options, option]
       };
     });
+  }
+
+  handleDeleteOption(optionToDelete) {
+    this.setState(prevState => ({
+      options: prevState.options.filter(option => optionToDelete !== option)
+    }));
   }
   render() {
     const title = "Indecision";
@@ -53,57 +76,61 @@ class Indecision extends React.Component {
         <Options
           options={this.state.options}
           handleRemoveAll={this.handleRemoveAll}
+          handleDeleteOption={this.handleDeleteOption}
         />
         <AddOption handleAddOption={this.handleAddOption} />
       </div>
     );
   }
 }
+const Header = props => {
+  return (
+    <div>
+      <h1>{props.title}</h1>
+      <h2>{props.subtitle}</h2>
+    </div>
+  );
+};
+const Action = props => {
+  return (
+    <div>
+      <button onClick={props.whatToDo} disabled={!props.hasOptions}>
+        what should I do
+      </button>
+    </div>
+  );
+};
 
-class Header extends React.Component {
-  render() {
-    return (
-      <div>
-        <h1>{this.props.title}</h1>
-        <h2>{this.props.subtitle}</h2>
-      </div>
-    );
-  }
-}
+const Options = props => {
+  return (
+    <div>
+      <button onClick={props.handleRemoveAll}>Remove All</button>
+      {props.options.length === 0 && <p>Please add an option to get started</p>}
+      {props.options.map(option => (
+        <Option
+          key={option}
+          optionText={option}
+          handleDeleteOption={props.handleDeleteOption}
+        />
+      ))}
+    </div>
+  );
+};
 
-class Action extends React.Component {
-  handleClick() {
-    alert("mod");
-  }
-  render() {
-    return (
-      <div>
-        <button onClick={this.props.whatToDo} disabled={!this.props.hasOptions}>
-          what should I do
-        </button>
-      </div>
-    );
-  }
-}
-
-class Options extends React.Component {
-  render() {
-    return (
-      <div>
-        <button onClick={this.props.handleRemoveAll}>Remove All</button>
-        {this.props.options.map(option => (
-          <Option key={option} optionText={option} />
-        ))}
-      </div>
-    );
-  }
-}
-
-class Option extends React.Component {
-  render() {
-    return <div>option: {this.props.optionText}</div>;
-  }
-}
+const Option = props => {
+  return (
+    <div>
+      {props.optionText}
+      <button
+        onClick={e => {
+          props.handleDeleteOption(props.optionText);
+        }}
+      >
+        Remove
+      </button>
+    </div>
+  );
+};
 
 class AddOption extends React.Component {
   constructor(props) {
@@ -117,12 +144,10 @@ class AddOption extends React.Component {
     e.preventDefault();
     const option = e.target.elements.option.value.trim();
     const error = this.props.handleAddOption(option);
-
-    this.setState(() => {
-      return {
-        error
-      };
-    });
+    this.setState(() => ({ error }));
+    if (!error) {
+      e.target.elements.option.value = "";
+    }
   }
   render() {
     return (
