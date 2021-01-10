@@ -71,16 +71,20 @@ class Indecision extends React.Component {
     return (
       <div>
         <Header title={title} subtitle={subtitle} />
+        <div class="container">
         <Action
           hasOptions={this.state.options.length > 0}
           whatToDo={this.whatToDo}
         />
+       <div className="widget">
         <Options
           options={this.state.options}
           handleRemoveAll={this.handleRemoveAll}
           handleDeleteOption={this.handleDeleteOption}
         />
         <AddOption handleAddOption={this.handleAddOption} />
+       </div>
+        </div>
         <OptionModal
           selected={this.state.selectedOption}
           clearOptionModal={this.clearOptionModal}
